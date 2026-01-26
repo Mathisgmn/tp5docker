@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+
+# Keep build essentials and app sources
+!Dockerfile
+!package.json
+!package-lock.json
+!app.js
+!index.js
+!server.js
+!src/
+!public/
+!dist/

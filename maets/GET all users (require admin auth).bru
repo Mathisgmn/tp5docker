@@ -1,0 +1,19 @@
+meta {
+  name: GET all users (require admin auth)
+  type: http
+  seq: 6
+}
+
+get {
+  url: http://localhost:3000/api/users
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjODYwZTVjZC0yYTUwLTRiZGEtYTgwZi1jYWNhOGQ4NTg0YWUiLCJyb2xlcyI6WyJhZG1pbiJdLCJpYXQiOjE3NjIxMzU2NjgsImV4cCI6MTc2MjEzOTI2OH0.567XMCX36BZPkMnexlluiPS-uy7QHtlfSEsPCuZRtiE
+}
+
+settings {
+  encodeUrl: true
+}

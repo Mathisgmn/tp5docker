@@ -1,0 +1,471 @@
+openapi: 3.0.3
+info:
+  title: Maets API
+  version: 1.0.0
+  description: API de librairie de jeux
+
+servers:
+  - url: http://localhost:3000
+  - url: https://localhost:3443
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Games
+  - name: Library
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # ---- paramètres réutilisables (UUID partout)
+  parameters:
+    GameIdParam:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      description: Game UUID
+    IdGameParam:
+      name: idGame
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      description: Game UUID
+    IdUserParam:
+      name: idUser
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      description: User UUID
+
+  # ---- schémas
+  schemas:
+    UUID:
+      type: string
+      format: uuid
+      example: "45e342b2-73b4-49d1-a961-969a078f9e3c"
+
+    ApiOk:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+        data: {}
+
+    Error:
+      type: object
+      properties:
+        message: { type: string, example: "Invalid token" }
+
+    UserPublic:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        username: { type: string, example: "Luc" }
+        is_admin: { type: boolean, example: false }
+
+    UserWithGames:
+      allOf:
+        - $ref: '#/components/schemas/UserPublic'
+        - type: object
+          properties:
+            games:
+              type: array
+              items: { $ref: '#/components/schemas/Game' }
+
+    AuthRegisterBody:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string, minLength: 6 }
+        is_admin: { type: boolean }
+
+    AuthLoginBody:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string }
+
+    AuthLoginOut:
+      type: object
+      properties:
+        token: { type: string }
+        user: { $ref: '#/components/schemas/UserPublic' }
+
+    Game:
+      type: object
+      properties:
+        idGame: { $ref: '#/components/schemas/UUID' }
+        title: { type: string, example: "Hollow Knight" }
+
+    GameCreateBody:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+
+    GameUpdateBody:
+      type: object
+      additionalProperties: true
+      example:
+        title: "Renamed"
+
+    LibraryItem:
+      type: object
+      properties:
+        idGame: { $ref: '#/components/schemas/UUID' }
+        title:  { type: string }
+        idConfig: { type: string }
+
+    GameConfig:
+      type: object
+      additionalProperties: true
+      example:
+        resolution: "1920x1080"
+        volume: 70
+
+# ---- Par défaut: toutes les routes sont protégées par JWT
+security:
+  - bearerAuth: []
+
+paths:
+
+  ######################
+  # AUTH (public)
+  ######################
+  /api/auth/register:
+    post:
+      security: []   # public
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthRegisterBody' }
+      responses:
+        '201':
+          description: Created (wrapped)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiOk'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserPublic' }
+        '409':
+          description: Username already taken
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/auth/login:
+    post:
+      security: []   # public
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthLoginBody' }
+      responses:
+        '200':
+          description: OK (wrapped)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiOk'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/AuthLoginOut' }
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  ######################
+  # USERS
+  ######################
+  /api/users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile (with games)
+      responses:
+        '200':
+          description: OK (wrapped)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiOk'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserWithGames' }
+        '401': { description: Unauthorized }
+
+  /api/users:
+    get:
+      tags: [Users]
+      summary: List all users (admin)
+      x-required-role: admin
+      responses:
+        '200':
+          description: OK (wrapped)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiOk'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/UserPublic' }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden (admin only) }
+
+  ######################
+  # GAMES
+  ######################
+  /api/games:
+    get:
+      tags: [Games]
+      summary: List games
+      # si la liste doit être publique, décommente la ligne suivante:
+      # security: []
+      responses:
+        '200':
+          description: OK (returns raw array)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Game' }
+
+    post:
+      tags: [Games]
+      summary: Create a game (admin)
+      x-required-role: admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GameCreateBody' }
+      responses:
+        '200':
+          description: OK (returns created game directly)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Game' }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden (admin only) }
+        '409': { description: Title already exists }
+
+  /api/games/mine:
+    get:
+      tags: [Games]
+      summary: List my games (derived from library)
+      responses:
+        '200':
+          description: OK (wrapped)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiOk'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Game' }
+        '401': { description: Unauthorized }
+
+  /api/games/{id}:
+    get:
+      tags: [Games]
+      summary: Get a game by id
+      parameters:
+        - $ref: '#/components/parameters/GameIdParam'
+      # si GET by id doit être public, décommente:
+      # security: []
+      responses:
+        '200':
+          description: OK (returns game directly)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Game' }
+        '404': { description: Not Found }
+
+    patch:
+      tags: [Games]
+      summary: Update a game (admin)
+      x-required-role: admin
+      parameters:
+        - $ref: '#/components/parameters/GameIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GameUpdateBody' }
+      responses:
+        '200':
+          description: OK (returns updated game directly)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Game' }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden (admin only) }
+        '404': { description: Not Found }
+
+    delete:
+      tags: [Games]
+      summary: Delete a game (admin)
+      x-required-role: admin
+      parameters:
+        - $ref: '#/components/parameters/GameIdParam'
+      responses:
+        '200':
+          description: OK (controller renvoie un booléen)
+          content:
+            application/json:
+              schema: { type: boolean, example: true }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden (admin only) }
+        '404': { description: Not Found }
+
+  ######################
+  # LIBRARY
+  ######################
+  /api/lib:
+    get:
+      tags: [Library]
+      summary: List my library
+      responses:
+        '200':
+          description: OK (wrapped)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiOk'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/LibraryItem' }
+        '401': { description: Unauthorized }
+
+  /api/lib/{idUser}/{idGame}:
+    post:
+      tags: [Library]
+      summary: Add a game to a user's library (admin)
+      x-required-role: admin
+      parameters:
+        - $ref: '#/components/parameters/IdUserParam'
+        - $ref: '#/components/parameters/IdGameParam'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GameConfig' }
+      responses:
+        '201':
+          description: Created (wrapped)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiOk'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          link:
+                            type: object
+                            properties:
+                              idUser: { $ref: '#/components/schemas/UUID' }
+                              idGame: { $ref: '#/components/schemas/UUID' }
+                              idConfig: { type: string }
+                          config: { $ref: '#/components/schemas/GameConfig' }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden (admin only) }
+        '404': { description: Game not found }
+        '409': { description: User already owns this game }
+
+    delete:
+      tags: [Library]
+      summary: Remove a game from a user's library (admin)
+      x-required-role: admin
+      parameters:
+        - $ref: '#/components/parameters/IdUserParam'
+        - $ref: '#/components/parameters/IdGameParam'
+      responses:
+        '204': { description: No Content }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden (admin only) }
+        '404': { description: Not found in user's library }
+
+  /api/lib/{idGame}:
+    delete:
+      tags: [Library]
+      summary: Remove a game from my library
+      parameters:
+        - $ref: '#/components/parameters/IdGameParam'
+      responses:
+        '204': { description: No Content }
+        '401': { description: Unauthorized }
+        '404': { description: Not found in user's library }
+
+  /api/lib/{idGame}/config:
+    get:
+      tags: [Library]
+      summary: Get my config for a game
+      parameters:
+        - $ref: '#/components/parameters/IdGameParam'
+      responses:
+        '200':
+          description: OK (wrapped)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiOk'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/GameConfig' }
+        '401': { description: Unauthorized }
+        '404': { description: Game not found in user's library }
+
+    patch:
+      tags: [Library]
+      summary: Update my config for a game
+      parameters:
+        - $ref: '#/components/parameters/IdGameParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GameConfig' }
+      responses:
+        '200':
+          description: OK (wrapped)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiOk'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/GameConfig' }
+        '401': { description: Unauthorized }
+        '404': { description: Game not found in user's library }

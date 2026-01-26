@@ -1,0 +1,19 @@
+meta {
+  name: Get MY games (auth required)
+  type: http
+  seq: 10
+}
+
+get {
+  url: http://localhost:3000/api/games/mine
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyYjM1YmRiMC1hNTk4LTQzZWEtYTQzZC0zZTg5ZjM1YzM2OGQiLCJyb2xlcyI6WyJ1c2VyIl0sImlhdCI6MTc2MjEzNTY0MCwiZXhwIjoxNzYyMTM5MjQwfQ.qBp2eP56NXe7T5UhmxS0UXtqNv0vwJxELGaqxSVJ9s0
+}
+
+settings {
+  encodeUrl: true
+}
