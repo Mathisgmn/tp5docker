@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini App WebSocket</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2rem; }
+      .log { white-space: pre-line; border: 1px solid #ccc; padding: 1rem; height: 200px; overflow: auto; }
+    </style>
+  </head>
+  <body>
+    <h1>Mini App WebSocket</h1>
+    <p>Connexion WebSocket et échanges simples.</p>
+    <form id="message-form">
+      <input id="message-input" type="text" placeholder="Votre message" required />
+      <button type="submit">Envoyer</button>
+    </form>
+    <div id="log" class="log"></div>
+    <script src="/config.js"></script>
+    <script>
+      const logEl = document.getElementById("log");
+      const form = document.getElementById("message-form");
+      const input = document.getElementById("message-input");
+      const wsUrl = window.APP_CONFIG?.WS_URL || "ws://localhost:8080";
+      const socket = new WebSocket(wsUrl);
+
+      const appendLog = (message) => {
+        logEl.textContent += `${message}\n`;
+        logEl.scrollTop = logEl.scrollHeight;
+      };
+
+      socket.addEventListener("open", () => {
+        console.log("client_connected");
+      });
+
+      socket.addEventListener("message", async (event) => {
+        let payload = event.data;
+        if (payload instanceof Blob) {
+          payload = await payload.text();
+        } else if (payload instanceof ArrayBuffer) {
+          payload = new TextDecoder().decode(payload);
+        }
+        console.log(`message_received payload=${payload}`);
+        appendLog(payload);
+      });
+
+      socket.addEventListener("close", () => {
+        console.log("client_disconnected");
+      });
+
+      socket.addEventListener("error", () => {
+        console.log("client_error");
+      });
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(input.value);
+          appendLog(input.value);
+          input.value = "";
+        } else {
+          console.log("websocket_not_ready");
+        }
+      });
+    </script>
+  </body>
+</html>
