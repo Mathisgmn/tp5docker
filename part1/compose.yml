@@ -8,6 +8,7 @@ services:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     volumes:
       - ./backend:/app
+      - /app/node_modules
   frontend:
     build: ./frontend
     env_file: .env
@@ -17,6 +18,7 @@ services:
       - "${FRONTEND_PORT}:5173"
     volumes:
       - ./frontend:/app
+      - /app/node_modules
 #
 # Ce fichier compose lance deux conteneurs en mode développement avec hot-reload :
 # backend expose le port configuré dans BACKEND_PORT et fournit le serveur WebSocket,
