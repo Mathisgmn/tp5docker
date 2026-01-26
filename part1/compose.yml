@@ -1,0 +1,25 @@
+services:
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      BACKEND_PORT: ${BACKEND_PORT}
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    volumes:
+      - ./backend:/app
+  frontend:
+    build: ./frontend
+    env_file: .env
+    environment:
+      WS_URL: ${WS_URL}
+    ports:
+      - "${FRONTEND_PORT}:5173"
+    volumes:
+      - ./frontend:/app
+#
+# Ce fichier compose lance deux conteneurs en mode développement avec hot-reload :
+# backend expose le port configuré dans BACKEND_PORT et fournit le serveur WebSocket,
+# frontend sert l'HTML via live-server sur le port FRONTEND_PORT et reçoit WS_URL pour
+# se connecter au backend, les volumes montés permettent le rechargement dès qu'un
+# fichier est modifié localement.
