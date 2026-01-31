@@ -9,22 +9,37 @@ const server = http.createServer((_, res) => {
 });
 
 const wss = new WebSocketServer({ server });
+let connectedClients = 0;
+
+const broadcast = (data) => {
+  for (const client of wss.clients) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(data);
+    }
+  }
+};
+
+const broadcastUserCount = () => {
+  broadcast(JSON.stringify({ type: "user_count", count: connectedClients }));
+};
 
 wss.on("connection", (ws, req) => {
   const clientAddress = req.socket.remoteAddress || "unknown";
   console.log(`client_connected address=${clientAddress}`);
+  connectedClients += 1;
+  broadcastUserCount();
 
   ws.on("message", (message) => {
     console.log(`message_received payload=${message}`);
-    for (const client of wss.clients) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(`echo:${message}`);
-      }
-    }
+    broadcast(
+      JSON.stringify({ type: "message", payload: String(message) })
+    );
   });
 
   ws.on("close", () => {
     console.log(`client_disconnected address=${clientAddress}`);
+    connectedClients = Math.max(0, connectedClients - 1);
+    broadcastUserCount();
   });
 });
 
