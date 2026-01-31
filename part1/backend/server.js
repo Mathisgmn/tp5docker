@@ -9,43 +9,61 @@ const server = http.createServer((_, res) => {
 });
 
 const wss = new WebSocketServer({ server });
+let connectedClients = 0;
 
-const broadcast = (data) => {
+const sendJson = (client, data) => {
+  if (client.readyState === WebSocket.OPEN) {
+    client.send(JSON.stringify(data));
+  }
+};
+
+const broadcastJson = (data) => {
+  const payload = JSON.stringify(data);
   for (const client of wss.clients) {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
+      client.send(payload);
     }
   }
 };
 
-const getConnectedClientsCount = () =>
-  Array.from(wss.clients).filter(
-    (client) => client.readyState === WebSocket.OPEN
-  ).length;
-
 const broadcastUserCount = () => {
-  broadcast(
-    JSON.stringify({ type: "user_count", count: getConnectedClientsCount() })
-  );
+  broadcastJson({ type: "user_count", count: connectedClients });
 };
 
 wss.on("connection", (ws, req) => {
   const clientAddress = req.socket.remoteAddress || "unknown";
+  let hasDisconnected = false;
+
+  connectedClients += 1;
   console.log(`client_connected address=${clientAddress}`);
   broadcastUserCount();
 
+  const handleDisconnect = (reason) => {
+    if (hasDisconnected) {
+      return;
+    }
+    hasDisconnected = true;
+    connectedClients = Math.max(connectedClients - 1, 0);
+    console.log(`client_disconnected address=${clientAddress} reason=${reason}`);
+    broadcastUserCount();
+  };
+
   ws.on("message", (message) => {
-    const payload = message.toString();
+    const payload = message.toString().trim();
+    if (!payload) {
+      return;
+    }
     console.log(`message_received payload=${payload}`);
-    broadcast(
-      JSON.stringify({ type: "message", payload })
-    );
+    broadcastJson({ type: "message", payload });
   });
 
-  ws.on("close", () => {
-    console.log(`client_disconnected address=${clientAddress}`);
-    broadcastUserCount();
+  ws.on("close", () => handleDisconnect("close"));
+  ws.on("error", (error) => {
+    console.error(`client_error address=${clientAddress}`, error);
+    handleDisconnect("error");
   });
+
+  sendJson(ws, { type: "user_count", count: connectedClients });
 });
 
 server.listen(port, "0.0.0.0", () => {
