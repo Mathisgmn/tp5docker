@@ -1,0 +1,51 @@
+services:
+  traefik:
+    image: traefik:v3.6.7
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      BACKEND_PORT: ${BACKEND_PORT}
+    restart: unless-stopped
+    depends_on:
+      - redis
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://localhost:' + (process.env.BACKEND_PORT || 8080), res => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=PathPrefix(`/socket`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
+  frontend:
+    build: ./frontend
+    env_file: .env
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
