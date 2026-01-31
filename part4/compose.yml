@@ -33,8 +33,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    expose:
+      - "${BACKEND_PORT}"
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -45,11 +45,12 @@ services:
   frontend:
     build: ./frontend
     env_file: .env
-    ports:
-      - "${FRONTEND_PORT}:5173"
+    expose:
+      - "5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=5173"

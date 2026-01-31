@@ -1,8 +1,8 @@
-// On instance une connexion WebSocket vers l'URL du backend
-const socket = io("http://localhost:8080", {
+// On instance une connexion WebSocket vers l'URL du backend via Traefik
+const socket = io(window.location.origin, {
   path: "/socket/",
   transports: ["websocket"]
-}); // localhost parce que partage de port Docker
+});
 const chat = document.getElementById("chat");
 const roomButtons = document.querySelectorAll("[data-room]");
 const roomLabel = document.getElementById("room-name");
