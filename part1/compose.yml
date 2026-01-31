@@ -4,6 +4,16 @@ services:
     env_file: .env
     environment:
       BACKEND_PORT: ${BACKEND_PORT}
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://localhost:' + (process.env.BACKEND_PORT || 8080), res => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     volumes:
