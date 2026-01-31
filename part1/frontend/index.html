@@ -35,8 +35,12 @@
       });
 
       socket.addEventListener("message", (event) => {
-        console.log(`message_received payload=${event.data}`);
-        appendLog(event.data);
+        const payload = String(event.data);
+        console.log(`message_received payload=${payload}`);
+        if (payload.startsWith("echo:")) {
+          return;
+        }
+        appendLog(payload);
       });
 
       socket.addEventListener("close", () => {
