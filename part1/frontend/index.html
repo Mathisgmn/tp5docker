@@ -32,30 +32,35 @@
 
       socket.addEventListener("open", () => {
         console.log("client_connected");
-        appendLog("Connecté au backend");
       });
 
       socket.addEventListener("message", (event) => {
-        console.log(`message_received payload=${event.data}`);
-        appendLog(`Message reçu: ${event.data}`);
+        const payload = String(event.data);
+        console.log(`message_received payload=${payload}`);
+        if (payload.startsWith("echo:")) {
+          return;
+        }
+        appendLog(payload);
       });
 
       socket.addEventListener("close", () => {
-        appendLog("Connexion fermée");
+        console.log("client_disconnected");
       });
 
       socket.addEventListener("error", () => {
-        appendLog("Erreur WebSocket");
+        console.error("websocket_error");
       });
 
       form.addEventListener("submit", (event) => {
         event.preventDefault();
         if (socket.readyState === WebSocket.OPEN) {
-          socket.send(input.value);
-          appendLog(`Message envoyé: ${input.value}`);
+          const message = input.value;
+          socket.send(message);
+          console.log(`message_sent payload=${message}`);
+          appendLog(message);
           input.value = "";
         } else {
-          appendLog("WebSocket non prêt");
+          console.warn("websocket_not_ready");
         }
       });
     </script>
