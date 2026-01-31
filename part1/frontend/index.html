@@ -36,7 +36,7 @@
 
       socket.addEventListener("message", (event) => {
         console.log(`message_received payload=${event.data}`);
-        appendLog(`Message reçu: ${event.data}`);
+        appendLog(event.data);
       });
 
       socket.addEventListener("close", () => {
@@ -50,8 +50,10 @@
       form.addEventListener("submit", (event) => {
         event.preventDefault();
         if (socket.readyState === WebSocket.OPEN) {
-          socket.send(input.value);
-          appendLog(`Message envoyé: ${input.value}`);
+          const message = input.value;
+          socket.send(message);
+          console.log(`message_sent payload=${message}`);
+          appendLog(message);
           input.value = "";
         } else {
           console.warn("websocket_not_ready");
