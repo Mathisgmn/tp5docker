@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Socket.IO Chat</title>
+    <style>
+      body { font-family: sans-serif; max-width: 500px; margin: 20px auto; }
+      .rooms { margin-bottom: 10px; }
+      .room-buttons { display: flex; gap: 6px; margin-top: 6px; }
+      .room-buttons button { flex: 1; margin-top: 0; }
+      #chat { border: 1px solid #ccc; height: 250px; overflow-y: auto; padding: 5px; }
+      input, #send-button { width: 100%; margin-top: 5px; }
+    </style>
+  </head>
+
+  <body>
+    <h3>🐈🐈🐈 Soupa chat 🐈🐈🐈</h3>
+    <p>Connectés : <span id="user-count">0</span></p>
+    <div class="rooms">
+      <strong>Room :</strong> <span id="room-name">meow</span>
+      <div class="room-buttons">
+        <button type="button" data-room="meow">Meow</button>
+        <button type="button" data-room="nap">Nap</button>
+        <button type="button" data-room="zoomies">Zoomies</button>
+      </div>
+    </div>
+    <div id="chat"></div>
+    <input id="msg" placeholder="Type a message..." />
+    <button id="send-button" onclick="send()">Send</button>
+
+    <!-- La lib socket.io depuis leur CDN -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+    <!-- Notre feuille JS -->
+    <script src="client.js"></script>
+  </body>
+</html>
