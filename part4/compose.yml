@@ -33,8 +33,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "${BACKEND_PORT}:${BACKEND_PORT}"
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -45,8 +43,6 @@ services:
   frontend:
     build: ./frontend
     env_file: .env
-    ports:
-      - "${FRONTEND_PORT}:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
