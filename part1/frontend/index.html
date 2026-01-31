@@ -32,7 +32,6 @@
 
       socket.addEventListener("open", () => {
         console.log("client_connected");
-        appendLog("Connecté au backend");
       });
 
       socket.addEventListener("message", (event) => {
@@ -41,11 +40,11 @@
       });
 
       socket.addEventListener("close", () => {
-        appendLog("Connexion fermée");
+        console.log("client_disconnected");
       });
 
       socket.addEventListener("error", () => {
-        appendLog("Erreur WebSocket");
+        console.error("websocket_error");
       });
 
       form.addEventListener("submit", (event) => {
@@ -55,7 +54,7 @@
           appendLog(`Message envoyé: ${input.value}`);
           input.value = "";
         } else {
-          appendLog("WebSocket non prêt");
+          console.warn("websocket_not_ready");
         }
       });
     </script>
