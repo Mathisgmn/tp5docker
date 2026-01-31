@@ -40,10 +40,16 @@
         const payload = String(event.data);
         console.log(`message_received payload=${payload}`);
         let parsed;
+
         try {
           parsed = JSON.parse(payload);
         } catch (error) {
-          console.warn("websocket_message_invalid", error);
+          if (payload.startsWith("echo:")) {
+            appendLog(payload.slice(5));
+            return;
+          }
+
+          appendLog(payload);
           return;
         }
 
