@@ -9,19 +9,6 @@ const server = http.createServer((_, res) => {
 });
 
 const wss = new WebSocketServer({ server });
-let connectedClients = 0;
-
-const broadcast = (data) => {
-  for (const client of wss.clients) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
-    }
-  }
-};
-
-const broadcastUserCount = () => {
-  broadcast(JSON.stringify({ type: "user_count", count: connectedClients }));
-};
 
 const broadcast = (data) => {
   for (const client of wss.clients) {
