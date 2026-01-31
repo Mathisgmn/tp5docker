@@ -1,5 +1,5 @@
 import http from "http";
-import { WebSocket, WebSocketServer } from "ws";
+import WebSocket, { WebSocketServer } from "ws";
 
 const port = parseInt(process.env.BACKEND_PORT || "8080", 10);
 
