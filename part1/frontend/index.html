@@ -12,6 +12,7 @@
   <body>
     <h1>Mini App WebSocket</h1>
     <p>Connexion WebSocket et échanges simples.</p>
+    <p>Utilisateurs connectés : <span id="user-count">0</span></p>
     <form id="message-form">
       <input id="message-input" type="text" placeholder="Votre message" required />
       <button type="submit">Envoyer</button>
@@ -22,6 +23,7 @@
       const logEl = document.getElementById("log");
       const form = document.getElementById("message-form");
       const input = document.getElementById("message-input");
+      const userCountEl = document.getElementById("user-count");
       const wsUrl = window.APP_CONFIG?.WS_URL || "ws://localhost:8080";
       const socket = new WebSocket(wsUrl);
 
@@ -37,10 +39,31 @@
       socket.addEventListener("message", (event) => {
         const payload = String(event.data);
         console.log(`message_received payload=${payload}`);
-        if (payload.startsWith("echo:")) {
+        let parsed;
+
+        try {
+          parsed = JSON.parse(payload);
+        } catch (error) {
+          if (payload.startsWith("echo:")) {
+            appendLog(payload.slice(5));
+            return;
+          }
+
+          appendLog(payload);
           return;
         }
-        appendLog(payload);
+
+        if (parsed?.type === "user_count") {
+          userCountEl.textContent = String(parsed.count ?? 0);
+          return;
+        }
+
+        if (parsed?.type === "message") {
+          appendLog(parsed.payload ?? "");
+          return;
+        }
+
+        console.warn("websocket_message_unhandled", parsed);
       });
 
       socket.addEventListener("close", () => {
@@ -57,7 +80,6 @@
           const message = input.value;
           socket.send(message);
           console.log(`message_sent payload=${message}`);
-          appendLog(message);
           input.value = "";
         } else {
           console.warn("websocket_not_ready");
