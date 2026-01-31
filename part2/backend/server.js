@@ -14,8 +14,19 @@ const io = new Server(server, {
   }
 });
 
+const rooms = ["meow", "nap", "zoomies"];
+
+const broadcastUserCount = () => {
+  io.emit("user_count", io.engine.clientsCount);
+};
+
 io.on("connection", (socket) => {
   console.log(`client_connected id=${socket.id}`);
+  broadcastUserCount();
+
+  socket.data.room = rooms[0];
+  socket.join(socket.data.room);
+  socket.emit("room_joined", socket.data.room);
 
   socket.on("chat", (msg) => {
     const payload = String(msg || "").trim();
@@ -23,11 +34,28 @@ io.on("connection", (socket) => {
       return;
     }
     console.log(`message_received id=${socket.id} payload=${payload}`);
-    io.emit("chat", payload);
+    if (!socket.data.room) {
+      return;
+    }
+    io.to(socket.data.room).emit("chat", payload);
+  });
+
+  socket.on("join_room", (room) => {
+    const nextRoom = String(room || "");
+    if (!rooms.includes(nextRoom)) {
+      return;
+    }
+    if (socket.data.room) {
+      socket.leave(socket.data.room);
+    }
+    socket.data.room = nextRoom;
+    socket.join(nextRoom);
+    socket.emit("room_joined", nextRoom);
   });
 
   socket.on("disconnect", (reason) => {
     console.log(`client_disconnected id=${socket.id} reason=${reason}`);
+    broadcastUserCount();
   });
 });
 
