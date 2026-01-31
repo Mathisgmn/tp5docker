@@ -1,7 +1,6 @@
-// On instance une connexion WebSocket vers l'URL du backend via Traefik
-const socket = io(window.location.origin, {
-  path: "/socket/",
-  transports: ["websocket"]
+// On instance une connexion Socket.IO sur la même origine (Traefik)
+const socket = io({
+  path: "/socket/"
 });
 const chat = document.getElementById("chat");
 const roomButtons = document.querySelectorAll("[data-room]");
