@@ -1,5 +1,5 @@
 import http from "http";
-import { WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
 
 const port = parseInt(process.env.BACKEND_PORT || "8080", 10);
 
@@ -16,7 +16,11 @@ wss.on("connection", (ws, req) => {
 
   ws.on("message", (message) => {
     console.log(`message_received payload=${message}`);
-    ws.send(`echo:${message}`);
+    for (const client of wss.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(`echo:${message}`);
+      }
+    }
   });
 
   ws.on("close", () => {
